@@ -1,0 +1,332 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <title>Document</title>
+
+    <style type="text/css">
+       *{
+           margin: 0;
+           padding: 0;}
+        canvas{
+
+           border:1px solid #000000;
+           margin: 30px 100px ;
+            background: url("img/2048.png") no-repeat 0px  0px;
+       }
+    </style>
+</head>
+<body>
+<canvas id = "canvas" width = "500px" height = "500px"></canvas>
+<script src = "js/underscore.js"></script>
+<script src = "js/game.js"></script>
+<script src = "js/num.js"></script>
+<script src = "js/plusArr.js"></script>
+
+<script>
+    var canvas = document.getElementById("canvas");
+    var ctx = canvas.getContext("2d");
+    //大体思路：得在2048.html中创建 数组1，改变数组1，然后再创建数组2 ，对比数组2跟数组1 ，由此来创建运动
+
+    var imagesURLArr = ["img/2048.png"];
+    var alreadyNum = 0;
+    var imagesArr = [];
+    var FPS = 60;
+    var game = new Game();
+    var numberArr = [[null,null,null,null],
+                     [null,null,null,null],
+                     [null,null,null,null],
+                     [null,null,null,null]
+                     ];
+    var newArr = [[null,null,null,null],
+                  [null,null,null,null],
+                  [null,null,null,null],
+                  [null,null,null,null]
+    ];
+    var plusingArr = [[null,null,null,null],
+                      [null,null,null,null],
+                      [null,null,null,null],
+                      [null,null,null,null]
+    ];
+    var jishuqi = 0;
+    var bornOrNot = false;
+    var plusFinished = true;
+    var notEmpty = 0;
+    var hasmove = false;
+    var plushasarrival = false;
+
+
+
+    for(var i=0;i<imagesURLArr.length;i++){
+        imagesArr[i] = new Image();
+        imagesArr[i].src = imagesURLArr[i];
+        imagesArr[i].onload = function(){
+            alreadyNum++;
+            ctx.clearRect(0,0,10000,10000);
+            ctx.font = "20px 微软雅黑";
+            ctx.fillText("资源已经加载"+alreadyNum+"/"+imagesURLArr.length,20,30)
+            if(alreadyNum == imagesURLArr.length){
+                game.run();
+            }
+        }
+    }
+
+
+    var locationArr = [
+        [{MapX:20,MapY:20, key:0,own:0},{MapX:140,MapY:20, key:0,own:0},{MapX:260,MapY:20, key:0,own:0}, {key:0,MapX:380,MapY:20 ,own:0}],
+        [{MapX:20,MapY:140,key:0,own:0},{MapX:140,MapY:140,key:0,own:0},{MapX:260,MapY:140,key:0,own:0},  {key:0,MapX:380,MapY:140,own:0}],
+        [{MapX:20,MapY:260,key:0,own:0},{MapX:140,MapY:260,key:0,own:0},{MapX:260,MapY:260,key:0,own:0},  {key:0,MapX:380,MapY:260,own:0}],
+        [{MapX:20,MapY:380,key:0,own:0},{MapX:140,MapY:380,key:0,own:0},{MapX:260,MapY:380,key:0,own:0},  {key:0,MapX:380,MapY:380,own:0}],
+
+    ]
+
+   game.born();
+   game.born();
+
+
+
+    console.log(numberArr)
+    console.log(locationArr)
+
+    var timeA,timeB
+
+    var jieliu = true;
+    window.onkeydown = function(e){
+
+        if(!jieliu){
+            return
+        }
+
+        jieliu = false;
+        var keycode = e.keyCode;
+//        console.log(keycode);//up38 down40 right39 left37
+        if(keycode == "38"){//up
+
+
+
+            //在这里（外面）克隆一个用于比较
+            game.cloneArr(newArr,numberArr)
+            //阀值初始化
+            jishuqi = 0;
+            bornOrNot = false;
+            plusFinished = true;
+            notEmpty = 0;
+            hasmove = false;
+            game.upclear();
+            game.becomeTrue("up");
+
+
+            //执行相加
+            for(var i=0;i<4;i++){
+                for(var r=0;r<3;r++){
+                    if(numberArr[r][i] && numberArr[r+1][i]){
+                        if(numberArr[r][i].score == numberArr[r+1][i].score){
+                            numberArr[r][i].score = numberArr[r][i].score *2;
+
+                            //因为立马要清空，这样就没有运动了，所以先复制出来一个；
+                            var aplusing = new plusArr({
+                                numX:numberArr[r+1][i].numX,
+                                numY:numberArr[r+1][i].numY,
+                                arrX:i,
+                                arrY:r,
+                                X:i*120+20,
+                                y:(r+1)*120+20,
+                                score:numberArr[r+1][i].score*2,
+                            })
+                            plusingArr[r+1][i] = aplusing
+                            plusingArr[r+1][i].up = true;
+                          //接下来就要把这个数组画出来；
+
+//                            bornOrNot = true;
+                            numberArr[r+1][i] = null;
+                            game.upclear();
+                        }
+                    }
+
+                }
+            }
+            //将locationArr映照归位;
+            game.locationRefresh();
+
+            //判断作用前后是否一致,不一致就生，一致就不生
+            game.judgeIfBorn();
+
+            //还需要一个参数，来判断numberArr此时有多少个位置不为空；
+            game.isNotEmpty();
+
+
+
+
+
+
+
+
+        }else if(keycode == "40"){//down
+
+            //在这里（外面）克隆一个用于比较
+            game.cloneArr(newArr,numberArr)
+            //所有阈值清零；
+            jishuqi = 0;
+            bornOrNot = false;
+            notEmpty = 0;
+            hasmove = false;
+            game.downclear();
+            game.becomeTrue("down");
+
+            //执行相加
+            for(var i=0;i<4;i++){
+                for(var r=3;r>=1;r--){
+                    if(numberArr[r][i] && numberArr[r-1][i]){
+                        if(numberArr[r][i].score == numberArr[r-1][i].score){
+                            numberArr[r][i].score = numberArr[r-1][i].score + numberArr[r][i].score;
+                            //因为立马要清空，这样就没有运动了，所以先复制出来一个；
+                            var aplusing = new plusArr({
+                                numX:numberArr[r-1][i].numX,
+                                numY:numberArr[r-1][i].numY,
+                                arrX:i,
+                                arrY:r,
+                                X:i*120+20,
+                                y:(r-1)*120+20,
+                                score:numberArr[r-1][i].score*2,
+                            })
+                            plusingArr[r-1][i] = aplusing
+                            plusingArr[r-1][i].down = true;
+                            //接下来就要把这个数组画出来；
+//                            bornOrNot = true;
+                            numberArr[r-1][i] = null;
+                            game.downclear()
+                        }
+                    }
+                }
+            }
+
+            //将locationArr映照归位;
+            game.locationRefresh();
+
+            //判断作用前后是否一致,不一致就生，一致就不生
+            game.judgeIfBorn();
+
+            //还需要一个参数，来判断numberArr此时有多少个位置不为空；
+            game.isNotEmpty();
+
+
+
+        }else if(keycode == "39"){//right
+
+
+
+            //在这里（外面）克隆一个用于比较
+            game.cloneArr(newArr,numberArr)
+            //所有阈值清零；
+            jishuqi = 0;
+            bornOrNot = false;
+            notEmpty = 0;
+            hasmove = false;
+            game.rightclear();
+            game.becomeTrue("right");
+
+
+
+            //执行相加
+            for(var i=3;i>=1;i--){
+                for(var r=0;r<4;r++){
+                    if(numberArr[r][i] && numberArr[r][i-1]){
+                        if(numberArr[r][i].score == numberArr[r][i-1].score){
+                            numberArr[r][i].score = numberArr[r][i-1].score + numberArr[r][i].score;
+                            //因为立马要清空，这样就没有运动了，所以先复制出来一个；
+
+                            var aplusing = new plusArr({
+                                numX:numberArr[r][i-1].numX,
+                                numY:numberArr[r][i-1].numY,
+                                arrX:i,
+                                arrY:r,
+                                X:(i-1)*120+20,
+                                y:r*120+20,
+                                score:numberArr[r][i-1].score*2,
+                            })
+                            plusingArr[r][i-1] = aplusing
+                            plusingArr[r][i-1].right = true;
+                            //接下来就要把这个数组画出来；
+//                            bornOrNot = true;
+                            numberArr[r][i-1] = null;
+                            game.rightclear()
+                        }
+                    }
+                }
+            }
+
+            //将locationArr映照归位;
+            game.locationRefresh();
+
+            //判断作用前后是否一致,不一致就生，一致就不生
+            game.judgeIfBorn();
+
+            //还需要一个参数，来判断numberArr此时有多少个位置不为空；
+            game.isNotEmpty();
+
+
+
+
+        }else if(keycode == "37"){//left
+
+            //在这里（外面）克隆一个用于比较
+            game.cloneArr(newArr,numberArr)
+            //所有阈值清零；
+            jishuqi = 0;
+            bornOrNot = false;
+            notEmpty = 0;
+            hasmove = false;
+            game.leftclear();
+            game.becomeTrue("left");
+
+            //执行相加
+            for(var i=0;i<3;i++){
+                for(var r=0;r<4;r++){
+                    if(numberArr[r][i] && numberArr[r][i+1]){
+                        if(numberArr[r][i].score == numberArr[r][i+1].score){
+                            numberArr[r][i].score = numberArr[r][i+1].score + numberArr[r][i].score;
+                            //因为立马要清空，这样就没有运动了，所以先复制出来一个；
+                            var aplusing = new plusArr({
+                                numX:numberArr[r][i+1].numX,
+                                numY:numberArr[r][i+1].numY,
+                                arrX:i,
+                                arrY:r,
+                                X:(i+1)*120+20,
+                                y:(r)*120+20,
+                                score:numberArr[r][i+1].score*2,
+                            })
+                            plusingArr[r][i+1] = aplusing
+                            plusingArr[r][i+1].left = true;
+                            //接下来就要把这个数组画出来；
+//                            bornOrNot = true;
+                            numberArr[r][i+1] = null;
+                            game.leftclear()
+                        }
+                    }
+                }
+            }
+
+            //将locationArr映照归位;
+            game.locationRefresh();
+
+            //判断作用前后是否一致,不一致就生，一致就不生
+            game.judgeIfBorn();
+
+            //还需要一个参数，来判断numberArr此时有多少个位置不为空；
+            game.isNotEmpty();
+
+
+        }
+
+
+        if(!hasmove && !bornOrNot){
+            jieliu = true;
+        }
+
+
+    }
+
+</script>
+
+</body>
+</html>
